@@ -381,7 +381,7 @@ class ParflowBinaryReader:
             self.header['p'] = p
             self.header['q'] = q
             self.header['r'] = r
-
+        nx, ny, nz = self.header['nx'], self.header['ny'], self.header['nz']
         if not ('p' in self.header
             and 'q' in self.header
             and 'r' in self.header):
@@ -389,9 +389,18 @@ class ParflowBinaryReader:
             # NOTE: This is a bit of a fallback and may not always work
             eps = 1 - 1e-6
             first_sg_head = self.read_subgrid_header()
-            self.header['p'] = int((self.header['nx'] / first_sg_head['nx']) + eps)
-            self.header['q'] = int((self.header['ny'] / first_sg_head['ny']) + eps)
-            self.header['r'] = int((self.header['nz'] / first_sg_head['nz']) + eps)
+            ptest = int(( nx / first_sg_head['nx']) + eps)
+            qtest = int(( ny / first_sg_head['ny']) + eps)
+            rtest = int(( nz / first_sg_head['nz']) + eps)
+            # Check if adding 1 to the number of subgrids would reduce
+            # the remainder. If so, add one to the subgrids along that dimension.
+            if (nx % ptest) > (nx % (ptest+1)): ptest += 1
+            if (ny % qtest) > (ny % (qtest+1)): qtest += 1
+            if (nz % rtest) > (nz % (qtest+1)): rtest += 1
+            self.header['p'] = ptest
+            self.header['q'] = qtest
+            self.header['r'] = rtest
+        print(self.header)
 
         if precompute_subgrid_info:
             self.compute_subgrid_info()
